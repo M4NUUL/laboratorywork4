@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cmath>
 #include <iomanip>
+#include <vector>
 #include "const.h"
 
 using namespace std;
@@ -16,6 +17,7 @@ double df_task4(double x) {
 
 // bisection on [a,b]
 double solve_bisect(double a, double b) {
+    vector<double> approximations;
     double fa = f_task4(a), fb = f_task4(b);
     if (fa * fb > 0) {
         cerr << "  [Bisection] Нет смены знака на [" << a << "," << b << "]\n";
@@ -23,8 +25,9 @@ double solve_bisect(double a, double b) {
     }
     double c, fc;
     for (int it = 0; it < MAX_IT; ++it) {
-        c = 0.5*(a + b);
+        c = 0.5 * (a + b);
         fc = f_task4(c);
+        approximations.push_back(c);
         if (fabs(b - a) < EPS) break;
         if (fa * fc <= 0) {
             b = c; fb = fc;
@@ -32,20 +35,31 @@ double solve_bisect(double a, double b) {
             a = c; fa = fc;
         }
     }
-    return 0.5*(a + b);
+    cout << "  Все приближения (Bisection):\n";
+    for (double val : approximations)
+        cout << val << " ";
+    cout << "\n";
+    return 0.5 * (a + b);
 }
 
 // Newton starting from x0
 double solve_newton(double x0) {
+    vector<double> approximations;
     double x = x0;
     for (int it = 0; it < MAX_IT; ++it) {
         double fx = f_task4(x), dfx = df_task4(x);
         if (fabs(dfx) < 1e-12) break;    // избежать деления на ноль
-        double x1 = x - fx/dfx;
+        double x1 = x - fx / dfx;
+        approximations.push_back(x1);
         if (fabs(x1 - x) < EPS) {
-            return x1;
+            x = x1;
+            break;
         }
         x = x1;
     }
+    cout << "  Все приближения (Newton):\n";
+    for (double val : approximations)
+        cout << val << " ";
+    cout << "\n";
     return x;
 }
