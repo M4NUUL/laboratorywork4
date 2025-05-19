@@ -94,12 +94,17 @@ void task2() {
     vector<int> b(total);
     b[0] = 1000;
     for (int i = 1; i < total; ++i) {
-        b[i] = b[i - 1] + 1;
+        b[i] = b[i - 1] + 100 + i;
     }
 
     cout << "\nНовый массив (строк по 5 элементов):\n";
-    for (int i = 0; i < total; ++i) {
-        cout << b[i] << "\t";
-        if ((i + 1) % 5 == 0) cout << "\n";
+    for (int i = 0; i < N; ++i) {
+        // i — номер строки
+        int start = i * 5;
+        int end = start + 5;
+        for (int j = end - 1; j >= start; --j) {
+            cout << b[j] << (j > start ? "\t" : "");
+        }
+        cout << "\n";
     }
 }
