@@ -1,90 +1,126 @@
 #include <iostream>
-#include <cmath>
-#include <iomanip>
+#include <map>
 #include <vector>
-#include "const.h"
+#include <algorithm>
+#include <limits>
 
 using namespace std;
 
-// f(x) = x*ln(x+2) - 2
-double f_task4(double x) {
-    return x * log(x + 2.0) - 2.0;
-}
-// f'(x) = ln(x+2) + x/(x+2)
-double df_task4(double x) {
-    return log(x + 2.0) + x / (x + 2.0);
-}
+int kandidats, voters;
+map<int, vector<int>> votes;
 
-// bisection on [a,b]
-double solve_bisect(double a, double b) {
-    vector<double> approximations;
-    double fa = f_task4(a), fb = f_task4(b);
-    if (fa * fb > 0) {
-        cerr << "  [Bisection] Нет смены знака на [" << a << "," << b << "]\n";
-        return NAN;
-    }
-    double c, fc;
-    for (int it = 0; it < MAX_IT; ++it) {
-        c = 0.5 * (a + b);
-        fc = f_task4(c);
-        approximations.push_back(c);
-        if (fabs(b - a) < EPS) break;
-        if (fa * fc <= 0) {
-            b = c; fb = fc;
-        } else {
-            a = c; fa = fc;
+string Bord_method() {
+    vector<int> ball(kandidats+1, 0);
+    for (int i = 1; i <= voters; i++) {
+        for (int j = 1; j <= kandidats; j++) {
+            ball[votes[i][j-1]] += (kandidats - j);
         }
     }
-    cout << "  Все приближения (Bisection):\n";
-    for (double val : approximations)
-        cout << val << " ";
-    cout << "\n";
-    return 0.5 * (a + b);
-}
-
-// Newton starting from x0
-double solve_newton(double x0) {
-    vector<double> approximations;
-    double x = x0;
-    for (int it = 0; it < MAX_IT; ++it) {
-        double fx = f_task4(x), dfx = df_task4(x);
-        if (fabs(dfx) < 1e-12) break;    // избежать деления на ноль
-        double x1 = x - fx / dfx;
-        approximations.push_back(x1);
-        if (fabs(x1 - x) < EPS) {
-            x = x1;
-            break;
-        }
-        x = x1;
+    cout << "Баллы кандидатов по методу Борда:";
+    for (int i = 1; i <= kandidats; i++) {
+        cout << " " << ball[i];
     }
-    cout << "  Все приближения (Newton):\n";
-    for (double val : approximations)
-        cout << val << " ";
-    cout << "\n";
-    return x;
+    cout << endl;
+    auto max = max_element(ball.begin(), ball.end());
+    if (count(ball.begin(), ball.end(), *max) == 1) {
+        return to_string(max - ball.begin());
+    } else {
+        return "Не определён.";
+    }
 }
 
+string Kondorse_method() {
+    for (int A = 1; A <= kandidats; A++) {
+        bool A_win = true;
+
+        for (int B = 1; B <= kandidats; B++) {
+            if (A == B) continue;
+
+            int count_A = 0;
+            for (int i = 1; i <= voters; i++) {
+                const auto& pref = votes.at(i);
+                int posA = find(pref.begin(), pref.end(), A) - pref.begin();
+                int posB = find(pref.begin(), pref.end(), B) - pref.begin();
+                if (posA < posB) {
+                    count_A++;
+                }
+            }
+
+            if (count_A <= (voters - count_A)) {
+                A_win = false;
+                break;
+            }
+        }
+
+        if (A_win) {return to_string(A);}
+    }
+
+    return "Не определён.";
+}
+ 
 int main() {
-    cout << "Вы выбрали задачу 4\n";
-    cout << fixed << setprecision(8);
-    cout << "Решение уравнения x*ln(x+2) = 2\n\n";
-    double a1 = -1.9, b1 = -1.0;
-    double root1_bis = solve_bisect(a1, b1);
-    double root1_newt = solve_newton(-1.5);
-    double a2 = 1.0, b2 = 2.0;
-    double root2_bis = solve_bisect(a2, b2);
-    double root2_newt = solve_newton(1.5);
-    cout << "Корень №1:\n";
-    cout << "  Bisection: x = " << root1_bis << "\n";
-    cout << "  Newton:    x = " << root1_newt;
-    if (fabs(root1_bis - root1_newt) > EPS)
-        cout << "   <-- расхождение методов!";
-    cout << "\n\n";
-    cout << "Корень №2:\n";
-    cout << "  Bisection: x = " << root2_bis << "\n";
-    cout << "  Newton:    x = " << root2_newt;
-    if (fabs(root2_bis - root2_newt) > EPS)
-        cout << "   <-- расхождение методов!";
-    cout << "\n";
-    return 0;
+    while (true) {
+        cout << "   Введите кол-во кандидатов > ";
+        cin >> kandidats;
+        if (kandidats <= 0) {cout << "Число не может быть отрицательным или нулём!" << endl;}
+        else if (kandidats < 3) {cout << "Ну так не интересно, нужно хотя бы 3" << endl;}
+        else {break;}
+    }
+    cout << "Кандидаты пронумерованы как:";
+    for (int i = 1; i <= kandidats; i++) {cout << " " << i;}
+    cout << endl;
+
+    while (true) {
+        cout << "   Введите кол-во избирателей > ";
+        cin >> voters;
+        if (voters <= 0) {cout << "Число не может быть отрицательным или нулём!" << endl;}
+        else if (voters < 3) {cout << "Ну так не интересно, нужно хотя бы 3" << endl;}
+        else {break;}
+    }
+    
+
+    for (int i = 1; i <= voters; i++) {
+        retry:
+            vector<int> curr_votes;
+            curr_votes.clear();
+            cout << "   Введите через пробел цепочку выборов избирателя №" << i << " > ";
+            for (int j = 0; j < kandidats; j++) {
+                int kand;
+                cin >> kand;
+                if (kand < 1 || kand > kandidats) {
+                    cerr << "Кандидата под номером " << kand << " не существует!" << endl;
+                    cin.clear();
+                    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                    goto retry;
+                } else if (find(curr_votes.begin(), curr_votes.end(), kand) != curr_votes.end()) {
+                    cerr << "Кандидаты не должны повторяться!" << endl;
+                    cin.clear();
+                    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                    goto retry;
+                } else {
+                    curr_votes.push_back(kand);
+                }
+            }
+        
+        votes.emplace(i, curr_votes);
+    }
+
+    cout << "Собранные голоса:" << endl;
+    for (const auto& [i, v] : votes) {
+        cout << "Избиратель №" << i << " |";
+        for (const auto& j : v) {
+            cout << " " << j;
+        }
+        cout << endl;
+    }
+
+    string Bord_winner = Bord_method();
+    cout << "Победитель по методу Борда: " << Bord_winner << endl;
+
+    string Kondorse_winner = Kondorse_method();
+    cout << "Победитель по методу Кондорсе: " << Kondorse_winner << endl;
+
+    if (Bord_winner != Kondorse_winner) {
+        cout << "Результаты методов не сошлись" << endl;
+    }
 }
