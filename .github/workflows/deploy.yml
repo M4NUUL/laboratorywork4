@@ -1,0 +1,45 @@
+name: Deploy frontend
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Connect and deploy
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          port: ${{ secrets.SERVER_PORT }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            set -e
+            export PATH=$PATH:/usr/local/bin
+            
+            cd /var/services/homes/m4nuul/sem_4-lab1
+            git fetch origin
+            git reset --hard origin/main
+
+            cd backend
+            npm install
+            npm run migrate
+            if [ -f backend.pid ] && kill -0 "$(cat backend.pid)" 2>/dev/null; then
+              kill "$(cat backend.pid)"
+              sleep 2
+            fi
+            nohup node index.js > backend.log 2>&1 &
+            echo $! > backend.pid
+
+            cd ..
+            cd frontend
+            npm install
+            export REACT_APP_API_URL=https://api-secure-spa.m4nuul.ru/api
+            npm run build
+
+            rm -rf /volume1/web/secure-spa/*
+            cp -r build/* /volume1/web/secure-spa/
