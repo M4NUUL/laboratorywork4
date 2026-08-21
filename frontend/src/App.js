@@ -11,7 +11,7 @@ import UsersPage from './pages/UsersPage';
 
 function App() {
   return (
-    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+    <BrowserRouter basename={process.env.PUBLIC_URL || undefined} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <div className="app-layout">
         <Navbar />
         <main className="app-content">
